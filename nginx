@@ -1,0 +1,44 @@
+dnf install nginx
+systemctl enable nginx
+systemctl start nginx
+firewall-cmd --permanent --add-service=http(s)
+firewall-cmd --reload
+nano /etc/nginx/nginx.conf - конфиг nginx, в секции server строка root - путь страницы
+nginx -t - проверка синтаксиса
+/var/www/?/html/index.html  (в centos /usr/share/nginx/html)- html страница по умолчанию (приветствие nginx), по умолчанию отобразится она
+
+************НАСТРОЙКА балансировки нагрузки
+в конфиге nginx
+ http    {
+	        upstream backend {
+	            least_conn;
+	            server  <ip_address>;
+	            server  <ip_address>;
+	            server  <ip_address> backup; (резервный)
+	        }
+	
+	        server  {
+	            location / {
+	                proxy_pass  http://.....;
+	            }
+	        }
+	    }
+systemctl restart nginx
+************НО МОЖНО СОЗДАТЬ НОВЫЙ КОНФИГ, для этого
+отвязка старого unlink /etc/nginx/sites-avaible (либо на centos conf.d)/default
+создание нового nano /etc/nginx/sites-avaible (либо на centos conf.d)/reverse-proxy.conf
+nginx -t 
+Создать символическую ссылку:
+# ln -s /etc/nginx/sites-avaible/reverse-proxy.conf /etc/nginx/sites-enabled/reverse-proxy.conf 
+************Разрешение для SEELinux
+setsebool -P httpd_can_network_connect 1
+************НАСТРОЙКА Reverse proxy
+в конфиге Nginx
+    server {
+	        listen  80;
+	        location    /   {
+	            proxy_pass http://<ip_address>;
+	        }
+	    }
+(либо можно создать новый конфиг для proxy как для балансировки)
+systemctl restart nginx
